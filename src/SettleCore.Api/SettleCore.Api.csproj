@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SettleCore.Modules.Payments.Infrastructure\SettleCore.Modules.Payments.Infrastructure.csproj" />
+    <ProjectReference Include="..\SettleCore.Modules.Reconciliation.Infrastructure\SettleCore.Modules.Reconciliation.Infrastructure.csproj" />
+    <ProjectReference Include="..\SettleCore.Modules.Ledger.Infrastructure\SettleCore.Modules.Ledger.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
