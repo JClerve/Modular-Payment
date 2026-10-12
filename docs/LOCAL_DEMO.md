@@ -5,9 +5,9 @@ Run these commands from the repository root. The automated Stripe demonstration 
 ## Fully local Stripe acceptance
 
 ```sh
-dotnet restore SettleCore.slnx
-dotnet build SettleCore.slnx --configuration Release --no-restore
-dotnet test tests/SettleCore.IntegrationTests --configuration Release --no-build \
+dotnet restore Demopay.slnx
+dotnet build Demopay.slnx --configuration Release --no-restore
+dotnet test tests/Demopay.IntegrationTests --configuration Release --no-build \
   --filter FullyQualifiedName~CreatedProviderPaymentCompletesOnlyFromSignedEvidenceAndPostsBalancedLedgerOnce \
   --verbosity normal
 ```
@@ -17,7 +17,7 @@ The test starts three isolated PostgreSQL containers, applies all module migrati
 Run all provider creation/recovery and security cases with:
 
 ```sh
-dotnet test tests/SettleCore.IntegrationTests --configuration Release --no-build \
+dotnet test tests/Demopay.IntegrationTests --configuration Release --no-build \
   --filter 'FullyQualifiedName~CreateProviderPaymentEndpointTests|FullyQualifiedName~LocalApiAccessTests' \
   --verbosity normal
 ```
@@ -36,31 +36,31 @@ export Payments__Stripe__Enabled=false
 export PaymentProviderEventWorker__Enabled=false
 export PaymentLedgerPostingWorker__Enabled=true
 
-docker run --detach --name settlecore-local \
+docker run --detach --name Demopay-local \
   --publish 127.0.0.1:55432:5432 \
-  --env POSTGRES_USER=settlecore --env POSTGRES_PASSWORD \
-  --env POSTGRES_DB=settlecore_payments postgres:18-alpine
+  --env POSTGRES_USER=Demopay --env POSTGRES_PASSWORD \
+  --env POSTGRES_DB=Demopay_payments postgres:18-alpine
 ```
 
-Wait until `docker exec settlecore-local pg_isready -U settlecore` reports ready, then create the other two databases (once per fresh container):
+Wait until `docker exec Demopay-local pg_isready -U Demopay` reports ready, then create the other two databases (once per fresh container):
 
 ```sh
-docker exec settlecore-local createdb -U settlecore settlecore_ledger
-docker exec settlecore-local createdb -U settlecore settlecore_reconciliation
-export ConnectionStrings__Payments="Host=localhost;Port=55432;Database=settlecore_payments;Username=settlecore;Password=$POSTGRES_PASSWORD"
-export ConnectionStrings__Ledger="Host=localhost;Port=55432;Database=settlecore_ledger;Username=settlecore;Password=$POSTGRES_PASSWORD"
-export ConnectionStrings__Reconciliation="Host=localhost;Port=55432;Database=settlecore_reconciliation;Username=settlecore;Password=$POSTGRES_PASSWORD"
+docker exec Demopay-local createdb -U Demopay Demopay_ledger
+docker exec Demopay-local createdb -U Demopay Demopay_reconciliation
+export ConnectionStrings__Payments="Host=localhost;Port=55432;Database=Demopay_payments;Username=Demopay;Password=$POSTGRES_PASSWORD"
+export ConnectionStrings__Ledger="Host=localhost;Port=55432;Database=Demopay_ledger;Username=Demopay;Password=$POSTGRES_PASSWORD"
+export ConnectionStrings__Reconciliation="Host=localhost;Port=55432;Database=Demopay_reconciliation;Username=Demopay;Password=$POSTGRES_PASSWORD"
 dotnet tool restore --tool-manifest dotnet-tools.json
-dotnet ef database update --project src/SettleCore.Modules.Payments.Infrastructure --startup-project src/SettleCore.Modules.Payments.Infrastructure --context PaymentsDbContext --connection "$ConnectionStrings__Payments"
-dotnet ef database update --project src/SettleCore.Modules.Ledger.Infrastructure --startup-project src/SettleCore.Modules.Ledger.Infrastructure --context LedgerDbContext --connection "$ConnectionStrings__Ledger"
-dotnet ef database update --project src/SettleCore.Modules.Reconciliation.Infrastructure --startup-project src/SettleCore.Modules.Reconciliation.Infrastructure --context ReconciliationDbContext --connection "$ConnectionStrings__Reconciliation"
+dotnet ef database update --project src/Demopay.Modules.Payments.Infrastructure --startup-project src/Demopay.Modules.Payments.Infrastructure --context PaymentsDbContext --connection "$ConnectionStrings__Payments"
+dotnet ef database update --project src/Demopay.Modules.Ledger.Infrastructure --startup-project src/Demopay.Modules.Ledger.Infrastructure --context LedgerDbContext --connection "$ConnectionStrings__Ledger"
+dotnet ef database update --project src/Demopay.Modules.Reconciliation.Infrastructure --startup-project src/Demopay.Modules.Reconciliation.Infrastructure --context ReconciliationDbContext --connection "$ConnectionStrings__Reconciliation"
 ```
 
 For HTTPS use the .NET development certificate. `dotnet dev-certs https --trust` may require your operating system's confirmation; it changes your local certificate trust. Alternatively configure a local certificate explicitly through Kestrel's certificate path/key settings. Start only the loopback HTTPS profile:
 
 ```sh
-dotnet run --project src/SettleCore.Api --configuration Release --no-build --launch-profile https &
-settlecore_api_pid=$!
+dotnet run --project src/Demopay.Api --configuration Release --no-build --launch-profile https &
+Demopay_api_pid=$!
 ```
 
 In the same shell, define an operator request helper that passes the key through curl's standard input rather than embedding its value in the process arguments. The examples assume a trusted development certificate.
@@ -68,12 +68,12 @@ In the same shell, define an operator request helper that passes the key through
 ```sh
 api() {
   curl --silent --show-error --fail --config - "$@" <<CURL
-header = "X-SettleCore-Operator-Key: $LocalApiAccess__OperatorKey"
+header = "X-Demopay-Operator-Key: $LocalApiAccess__OperatorKey"
 CURL
 }
-export SETTLECORE_URL=https://localhost:7220
-curl --fail "$SETTLECORE_URL/health/live"
-curl --fail "$SETTLECORE_URL/health/ready"
+export Demopay_URL=https://localhost:7220
+curl --fail "$Demopay_URL/health/live"
+curl --fail "$Demopay_URL/health/ready"
 ```
 
 Both health checks should return 200 after startup/migrations. An unauthenticated `POST /payments` returns 401. Choose explicit demonstration IDs; these examples represent one selected ledger and three selected accounts, not an account-routing or fee policy:
@@ -85,18 +85,18 @@ merchant_id=33333333-3333-3333-3333-333333333333
 revenue_id=44444444-4444-4444-4444-444444444444
 transaction_id=$(python3 -c 'import uuid; print(uuid.uuid4())')
 for account_id in "$processor_id" "$merchant_id" "$revenue_id"; do
-  api -H 'Content-Type: application/json' -d "{\"accountId\":\"$account_id\",\"ledgerId\":\"$ledger_id\",\"currency\":\"SGD\"}" "$SETTLECORE_URL/ledger/accounts"
+  api -H 'Content-Type: application/json' -d "{\"accountId\":\"$account_id\",\"ledgerId\":\"$ledger_id\",\"currency\":\"SGD\"}" "$Demopay_URL/ledger/accounts"
 done
-payment_id=$(api -H 'Content-Type: application/json' -d '{"amount":12.34,"currency":"SGD"}' "$SETTLECORE_URL/payments" | jq -r .paymentId)
+payment_id=$(api -H 'Content-Type: application/json' -d '{"amount":12.34,"currency":"SGD"}' "$Demopay_URL/payments" | jq -r .paymentId)
 posting_input="{\"transactionId\":\"$transaction_id\",\"ledgerId\":\"$ledger_id\",\"processorReceivableAccountId\":\"$processor_id\",\"merchantPayableAccountId\":\"$merchant_id\",\"platformRevenueAccountId\":\"$revenue_id\",\"feeAmountMinorUnits\":34}"
-api -H 'Content-Type: application/json' -d "$posting_input" "$SETTLECORE_URL/payments/$payment_id/succeed"
-api "$SETTLECORE_URL/payments/$payment_id/ledger-posting"
-api "$SETTLECORE_URL/ledger/transactions/$transaction_id"
+api -H 'Content-Type: application/json' -d "$posting_input" "$Demopay_URL/payments/$payment_id/succeed"
+api "$Demopay_URL/payments/$payment_id/ledger-posting"
+api "$Demopay_URL/ledger/transactions/$transaction_id"
 ```
 
 Poll the posting resource until `status` is `Posted` and `postedAt` is present (default worker polling is five seconds). Ledger retrieval should show the same exact transaction ID and three balanced entries. Re-provisioning identical accounts returns 200; conflicting ledger/currency returns 409. The manual success route is deliberately unavailable when Stripe is enabled. This interactive demonstration makes no provider call and is separate from signed Stripe acceptance above.
 
-Stop the host with `kill "$settlecore_api_pid"` and stop the demo container with `docker stop settlecore-local`. Keep its data for inspection; remove a disposable container only when you intentionally want to discard it. Unset the generated secrets/connection variables after the session. Reusing the named container requires its original password; do not regenerate it and assume the existing database changed.
+Stop the host with `kill "$Demopay_api_pid"` and stop the demo container with `docker stop Demopay-local`. Keep its data for inspection; remove a disposable container only when you intentionally want to discard it. Unset the generated secrets/connection variables after the session. Reusing the named container requires its original password; do not regenerate it and assume the existing database changed.
 
 ## Optional external Stripe TEST-mode acceptance — not yet verified
 
@@ -107,6 +107,6 @@ This optional exercise requires your own Stripe test/sandbox credentials and Str
 3. Provision your selected accounts and create a new local payment as above. Submit `posting_input` to `/payments/{id}/ledger-posting/preparation`. Call `/payments/{id}/provider-payment`; capture only `providerReference.reference` into an `intent_id` variable instead of printing the client secret. Verify local status is still Pending.
 4. Confirm **that exact original intent** with Stripe's test payment method, for example `stripe payment_intents confirm "$intent_id" --payment-method pm_card_visa --return-url https://localhost:7220`. Consult the [confirmation API](https://docs.stripe.com/api/payment_intents/confirm) if the selected test method requires additional parameters. Do not use `stripe trigger payment_intent.succeeded` as acceptance for this payment: it creates unrelated fixture objects lacking the local identity/reference correlation.
 5. Observe the signed event arrive, local payment become Succeeded and posting become Posted with the chosen exact IDs/fee and one balanced transaction. Re-deliver the same provider event through Stripe's supported delivery tooling, then verify one durable receipt and one transaction. Record only object/event IDs, statuses, totals and times as evidence. Include how redelivery was performed; do not claim it if not exercised.
-6. For recovery practice, find the original intent by exact `settlecore_payment_id` metadata and trusted provider records, then submit its reference to `/payments/{id}/provider-reference`. Mismatches must not attach. Never delete/reset an attempt or create a replacement to bypass expiry; investigate ambiguous/multiple candidates.
+6. For recovery practice, find the original intent by exact `Demopay_payment_id` metadata and trusted provider records, then submit its reference to `/payments/{id}/provider-reference`. Mismatches must not attach. Never delete/reset an attempt or create a replacement to bypass expiry; investigate ambiguous/multiple candidates.
 
 The external test has not been run in this completion. Required credentials were not supplied. Fake-transport success cannot prove account-specific webhook forwarding, Stripe account settings or external network behavior. See [Stripe idempotency retention](https://docs.stripe.com/api/idempotent_requests) and [PaymentIntent reuse/client-secret handling](https://docs.stripe.com/payments/payment-intents).

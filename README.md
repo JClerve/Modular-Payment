@@ -20,7 +20,7 @@
 
 ---
 
-SettleCore is a portfolio project built as a **modular monolith**. Payments, Ledger and Reconciliation each have their own PostgreSQL persistence context. Stripe PaymentIntents are the first provider, and a payment is marked complete only on **authenticated webhook evidence**, never on a creation response.
+Demopay is a portfolio project built as a **modular monolith**. Payments, Ledger and Reconciliation each have their own PostgreSQL persistence context. Stripe PaymentIntents are the first provider, and a payment is marked complete only on **authenticated webhook evidence**, never on a creation response.
 
 > [!NOTE]
 > The agreed deliverable is the **local backend**. No frontend, hosting or deployment is required. Automated acceptance uses the real Stripe SDK with an isolated fake HTTP transport and real local PostgreSQL. **No live external Stripe acceptance is claimed.**
@@ -34,9 +34,9 @@ SettleCore is a portfolio project built as a **modular monolith**. Payments, Led
 - [ ] Network access for restore and the first image pulls (the payment acceptance itself makes no external provider requests)
 
 ```sh
-dotnet restore SettleCore.slnx
-dotnet build SettleCore.slnx --configuration Release --no-restore
-dotnet test SettleCore.slnx --configuration Release --no-build --verbosity minimal
+dotnet restore Demopay.slnx
+dotnet build Demopay.slnx --configuration Release --no-restore
+dotnet test Demopay.slnx --configuration Release --no-build --verbosity minimal
 ```
 
 <details>
@@ -45,7 +45,7 @@ dotnet test SettleCore.slnx --configuration Release --no-build --verbosity minim
 <br>
 
 ```sh
-dotnet test tests/SettleCore.IntegrationTests --configuration Release --no-build \
+dotnet test tests/Demopay.IntegrationTests --configuration Release --no-build \
   --filter FullyQualifiedName~CreatedProviderPaymentCompletesOnlyFromSignedEvidenceAndPostsBalancedLedgerOnce \
   --verbosity normal
 ```
@@ -75,7 +75,7 @@ The full, copy-pasteable walkthrough is in [docs/LOCAL_DEMO.md](docs/LOCAL_DEMO.
 sequenceDiagram
     autonumber
     actor Op as Operator
-    participant API as SettleCore API
+    participant API as Demopay API
     participant Pay as Payments DB
     participant Stripe
     participant RW as Receipt worker
@@ -127,7 +127,7 @@ stateDiagram-v2
 
 ```mermaid
 flowchart LR
-    subgraph Host["SettleCore.Api"]
+    subgraph Host["Demopay.Api"]
         Auth["Operator auth<br/>(HTTPS + key)"]
         Endpoints["Endpoints"]
         Workers["Background workers"]
@@ -160,12 +160,12 @@ The Payments Domain/Application projects contain no Stripe SDK types; provider p
 
 ## ✨ Backend capabilities
 
-| | Area | What you get |
-| :-: | --- | --- |
-| 📒 | **Ledger** | Explicit account provisioning with idempotent replay and rejection of conflicting identity/currency. Balanced, immutable transaction posting with concurrent replay protection. |
-| 🔁 | **Provider creation** | Payment-derived provider idempotency, persisted preparation and first-attempt timestamps, conservative creation retry limits, verified original-intent recovery and response-only client secrets. |
-| 📨 | **Webhooks & workers** | Durable signed receipt ingestion, authoritative correlated completion, atomic success/posting-intent/audit recording, and separately retrying receipt and Ledger posting workers. |
-| 🔐 | **Operations** | Default-on local operator authentication over HTTPS, public dependency-free liveness, all-module database/schema readiness, and tag-free worker metrics. |
+|     | Area                   | What you get                                                                                                                                                                                      |
+| :-: | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📒  | **Ledger**             | Explicit account provisioning with idempotent replay and rejection of conflicting identity/currency. Balanced, immutable transaction posting with concurrent replay protection.                   |
+| 🔁  | **Provider creation**  | Payment-derived provider idempotency, persisted preparation and first-attempt timestamps, conservative creation retry limits, verified original-intent recovery and response-only client secrets. |
+| 📨  | **Webhooks & workers** | Durable signed receipt ingestion, authoritative correlated completion, atomic success/posting-intent/audit recording, and separately retrying receipt and Ledger posting workers.                 |
+| 🔐  | **Operations**         | Default-on local operator authentication over HTTPS, public dependency-free liveness, all-module database/schema readiness, and tag-free worker metrics.                                          |
 
 <details>
 <summary><b>📐 Scope: what is and isn't included</b></summary>
@@ -174,13 +174,13 @@ The Payments Domain/Application projects contain no Stripe SDK types; provider p
 
 Accounting inputs are always explicit: transaction, ledger and account IDs, gross amount/currency and the chosen fee. Worker and provider integrations are opt-in.
 
-| ✅ In scope | ❌ Out of scope |
-| --- | --- |
-| Local payment lifecycle | Merchant routing |
-| Stripe PaymentIntents (fake transport in tests) | Fee policy |
-| Double-entry Ledger | Multi-tenant customer authentication |
-| Caller-supplied reconciliation comparisons | Refunds and payouts |
-| Single local operator key | Public customer API |
+| ✅ In scope                                     | ❌ Out of scope                      |
+| ----------------------------------------------- | ------------------------------------ |
+| Local payment lifecycle                         | Merchant routing                     |
+| Stripe PaymentIntents (fake transport in tests) | Fee policy                           |
+| Double-entry Ledger                             | Multi-tenant customer authentication |
+| Caller-supplied reconciliation comparisons      | Refunds and payouts                  |
+| Single local operator key                       | Public customer API                  |
 
 > [!WARNING]
 > Do not use the local demo key model as a public customer API.
@@ -190,53 +190,53 @@ Accounting inputs are always explicit: transaction, ledger and account IDs, gros
 ## 🌐 API overview
 
 > [!IMPORTANT]
-> Every route below requires the `X-SettleCore-Operator-Key` header over HTTPS unless marked 🌍 public. Set a randomly generated `LocalApiAccess__OperatorKey` of **at least 32 characters** before starting the host. Access is enabled by default.
+> Every route below requires the `X-Demopay-Operator-Key` header over HTTPS unless marked 🌍 public. Set a randomly generated `LocalApiAccess__OperatorKey` of **at least 32 characters** before starting the host. Access is enabled by default.
 
 <details open>
 <summary><b>💳 Payments</b></summary>
 
-| Method | Route | Purpose |
-| :-: | --- | --- |
-| `POST` | `/payments` | Create a pending local payment |
-| `GET` | `/payments/{id}` | Inspect local status/reference |
-| `POST` | `/payments/{id}/ledger-posting/preparation` | Persist immutable explicit posting inputs |
-| `POST` | `/payments/{id}/provider-payment` | Create the provider intent inside the retry window |
-| `GET` | `/payments/{id}/provider-payment` | Retrieve and correlate the stored provider intent |
-| `POST` | `/payments/{id}/provider-reference` | Recover a supplied original intent; verified lookup when Stripe is enabled |
-| `GET` | `/payments/{id}/ledger-posting` | Inspect posting status/retry/acknowledgment |
-| `POST` | `/payments/{id}/succeed` | Provider-disabled local demonstration path only |
-| `POST` | `/payments/webhooks/stripe` 🌍 | Public, signature-authenticated durable receipt ingress |
+| Method | Route                                       | Purpose                                                                    |
+| :----: | ------------------------------------------- | -------------------------------------------------------------------------- |
+| `POST` | `/payments`                                 | Create a pending local payment                                             |
+| `GET`  | `/payments/{id}`                            | Inspect local status/reference                                             |
+| `POST` | `/payments/{id}/ledger-posting/preparation` | Persist immutable explicit posting inputs                                  |
+| `POST` | `/payments/{id}/provider-payment`           | Create the provider intent inside the retry window                         |
+| `GET`  | `/payments/{id}/provider-payment`           | Retrieve and correlate the stored provider intent                          |
+| `POST` | `/payments/{id}/provider-reference`         | Recover a supplied original intent; verified lookup when Stripe is enabled |
+| `GET`  | `/payments/{id}/ledger-posting`             | Inspect posting status/retry/acknowledgment                                |
+| `POST` | `/payments/{id}/succeed`                    | Provider-disabled local demonstration path only                            |
+| `POST` | `/payments/webhooks/stripe` 🌍              | Public, signature-authenticated durable receipt ingress                    |
 
 </details>
 
 <details>
 <summary><b>📒 Ledger</b></summary>
 
-| Method | Route | Purpose |
-| :-: | --- | --- |
-| `POST` | `/ledger/accounts` | Provision explicit account identity/ledger/currency |
-| `POST` | `/ledger/transactions` | Explicit balanced posting |
-| `GET` | `/ledger/transactions/{id}` | Retrieve a transaction |
+| Method | Route                       | Purpose                                             |
+| :----: | --------------------------- | --------------------------------------------------- |
+| `POST` | `/ledger/accounts`          | Provision explicit account identity/ledger/currency |
+| `POST` | `/ledger/transactions`      | Explicit balanced posting                           |
+| `GET`  | `/ledger/transactions/{id}` | Retrieve a transaction                              |
 
 </details>
 
 <details>
 <summary><b>🧮 Reconciliation</b></summary>
 
-| Method | Route | Purpose |
-| :-: | --- | --- |
-| `POST` | `/reconciliations` | Store a caller-supplied expected-versus-actual comparison |
-| `GET` | `/reconciliations/{id}` | Inspect a comparison |
+| Method | Route                   | Purpose                                                   |
+| :----: | ----------------------- | --------------------------------------------------------- |
+| `POST` | `/reconciliations`      | Store a caller-supplied expected-versus-actual comparison |
+| `GET`  | `/reconciliations/{id}` | Inspect a comparison                                      |
 
 </details>
 
 <details>
 <summary><b>❤️ Health</b></summary>
 
-| Method | Route | Purpose |
-| :-: | --- | --- |
-| `GET` | `/health/live` 🌍 | Public liveness |
-| `GET` | `/health/ready` 🌍 | Dependency/schema readiness |
+| Method | Route              | Purpose                     |
+| :----: | ------------------ | --------------------------- |
+| `GET`  | `/health/live` 🌍  | Public liveness             |
+| `GET`  | `/health/ready` 🌍 | Dependency/schema readiness |
 
 </details>
 
@@ -249,29 +249,29 @@ Accounting inputs are always explicit: transaction, ledger and account IDs, gros
 # Keeps the operator key out of process arguments
 api() {
   curl --silent --show-error --fail --config - "$@" <<CURL
-header = "X-SettleCore-Operator-Key: $LocalApiAccess__OperatorKey"
+header = "X-Demopay-Operator-Key: $LocalApiAccess__OperatorKey"
 CURL
 }
 
-export SETTLECORE_URL=https://localhost:7220
-curl --fail "$SETTLECORE_URL/health/ready"
+export Demopay_URL=https://localhost:7220
+curl --fail "$Demopay_URL/health/ready"
 
 api -H 'Content-Type: application/json' \
   -d '{"amount":12.34,"currency":"SGD"}' \
-  "$SETTLECORE_URL/payments"
+  "$Demopay_URL/payments"
 ```
 
 </details>
 
 ## 📚 Documentation map
 
-| Document | Read it when you want to… |
-| --- | --- |
-| [📘 Local demo runbook](docs/LOCAL_DEMO.md) | Run the fully local Stripe flow or the interactive operator API |
-| [🛠️ Operations](OPERATIONS.md) | Configure the host, apply migrations, read metrics, recover orphans safely |
-| [🏛️ Architecture](docs/ARCHITECTURE.md) | Understand module boundaries and recovery guarantees |
-| [✅ Acceptance evidence](docs/ACCEPTANCE.md) | See exact verified commits and known limits |
-| [📍 Project checkpoint](PROJECT_CHECKPOINT.md) | Pick up continuation history |
+| Document                                       | Read it when you want to…                                                  |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| [📘 Local demo runbook](docs/LOCAL_DEMO.md)    | Run the fully local Stripe flow or the interactive operator API            |
+| [🛠️ Operations](OPERATIONS.md)                 | Configure the host, apply migrations, read metrics, recover orphans safely |
+| [🏛️ Architecture](docs/ARCHITECTURE.md)        | Understand module boundaries and recovery guarantees                       |
+| [✅ Acceptance evidence](docs/ACCEPTANCE.md)   | See exact verified commits and known limits                                |
+| [📍 Project checkpoint](PROJECT_CHECKPOINT.md) | Pick up continuation history                                               |
 
 <details>
 <summary><b>🗂️ Repository layout</b></summary>
@@ -280,14 +280,14 @@ api -H 'Content-Type: application/json' \
 
 ```text
 src/
-├── SettleCore.Api/                                   # Host, endpoints, auth, health, workers
-├── SettleCore.Modules.Payments[.Infrastructure]/     # Payments domain + EF Core + Stripe adapter
-├── SettleCore.Modules.Ledger[.Infrastructure]/       # Double-entry ledger + EF Core
-└── SettleCore.Modules.Reconciliation[.Infrastructure]/
+├── Demopay.Api/                                   # Host, endpoints, auth, health, workers
+├── Demopay.Modules.Payments[.Infrastructure]/     # Payments domain + EF Core + Stripe adapter
+├── Demopay.Modules.Ledger[.Infrastructure]/       # Double-entry ledger + EF Core
+└── Demopay.Modules.Reconciliation[.Infrastructure]/
 tests/
-├── SettleCore.IntegrationTests/                      # End-to-end HTTP + workers + PostgreSQL
-├── SettleCore.Modules.*.UnitTests/
-└── SettleCore.Modules.*.Infrastructure.IntegrationTests/
+├── Demopay.IntegrationTests/                      # End-to-end HTTP + workers + PostgreSQL
+├── Demopay.Modules.*.UnitTests/
+└── Demopay.Modules.*.Infrastructure.IntegrationTests/
 ```
 
 </details>

@@ -1,6 +1,6 @@
 # Backend architecture
 
-SettleCore is a modular monolith. The API composes module services and hosted workers; each module owns its domain/application contracts and a separate Infrastructure project. PostgreSQL stores and migration histories can be separated by module, as in the acceptance flow. Infrastructure dependencies are injected; the Payments Domain/Application projects contain no Stripe SDK types.
+Demopay is a modular monolith. The API composes module services and hosted workers; each module owns its domain/application contracts and a separate Infrastructure project. PostgreSQL stores and migration histories can be separated by module, as in the acceptance flow. Infrastructure dependencies are injected; the Payments Domain/Application projects contain no Stripe SDK types.
 
 ```mermaid
 flowchart TD
@@ -32,7 +32,7 @@ flowchart TD
 ## Consistency and recovery
 
 1. Payment creation stores a local Pending payment. Preparing posting inputs does not invent accounts, fee policy or routing.
-2. Provider creation records the first attempt before outbound I/O and derives its idempotency key from the SettleCore payment ID. Creation observations never authorize local success. Reference persistence precedes returning the response-only client secret.
+2. Provider creation records the first attempt before outbound I/O and derives its idempotency key from the Demopay payment ID. Creation observations never authorize local success. Reference persistence precedes returning the response-only client secret.
 3. Stripe composition allows automatic creation retry only inside 23 hours from the immutable first attempt. Expired or future-dated attempts are blocked. After that, the operator must establish the original intent; a supplied reference is retrieved and correlated before durable attachment. Recovery never calls creation, resets age or marks success. Uncertain or multiple candidate intents require investigation, not recreation.
 4. Webhook ingress authenticates the raw signed envelope and configured mode, then awaits durable receipt persistence before acknowledging it. Identical evidence replays succeed; conflicting evidence is rejected. Raw payloads and client secrets are not stored.
 5. The receipt processor requires matching local reference, amount, currency, mode and explicit preparation. It saves success, the posting intent, audit and receipt processing time in one Payments transaction. Missing prerequisites defer processing; durable schedules prevent one deferred receipt from starving others.
