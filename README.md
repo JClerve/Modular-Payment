@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💳 SettleCore
+# 💳 DemoPAY
 
 **A locally runnable .NET modular payment backend — Payments · Ledger · Reconciliation**
 
