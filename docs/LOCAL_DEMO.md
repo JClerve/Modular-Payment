@@ -7,7 +7,7 @@ Run these commands from the repository root. The automated Stripe demonstration 
 ```sh
 dotnet restore Demopay.slnx
 dotnet build Demopay.slnx --configuration Release --no-restore
-dotnet test tests/Demopay.IntegrationTests --configuration Release --no-build \
+dotnet test tests/Integration/Api --configuration Release --no-build \
   --filter FullyQualifiedName~CreatedProviderPaymentCompletesOnlyFromSignedEvidenceAndPostsBalancedLedgerOnce \
   --verbosity normal
 ```
@@ -17,7 +17,7 @@ The test starts three isolated PostgreSQL containers, applies all module migrati
 Run all provider creation/recovery and security cases with:
 
 ```sh
-dotnet test tests/Demopay.IntegrationTests --configuration Release --no-build \
+dotnet test tests/Integration/Api --configuration Release --no-build \
   --filter 'FullyQualifiedName~CreateProviderPaymentEndpointTests|FullyQualifiedName~LocalApiAccessTests' \
   --verbosity normal
 ```
@@ -51,15 +51,15 @@ export ConnectionStrings__Payments="Host=localhost;Port=55432;Database=Demopay_p
 export ConnectionStrings__Ledger="Host=localhost;Port=55432;Database=Demopay_ledger;Username=Demopay;Password=$POSTGRES_PASSWORD"
 export ConnectionStrings__Reconciliation="Host=localhost;Port=55432;Database=Demopay_reconciliation;Username=Demopay;Password=$POSTGRES_PASSWORD"
 dotnet tool restore --tool-manifest dotnet-tools.json
-dotnet ef database update --project src/Demopay.Modules.Payments.Infrastructure --startup-project src/Demopay.Modules.Payments.Infrastructure --context PaymentsDbContext --connection "$ConnectionStrings__Payments"
-dotnet ef database update --project src/Demopay.Modules.Ledger.Infrastructure --startup-project src/Demopay.Modules.Ledger.Infrastructure --context LedgerDbContext --connection "$ConnectionStrings__Ledger"
-dotnet ef database update --project src/Demopay.Modules.Reconciliation.Infrastructure --startup-project src/Demopay.Modules.Reconciliation.Infrastructure --context ReconciliationDbContext --connection "$ConnectionStrings__Reconciliation"
+dotnet ef database update --project src/Modules/Payments.Infrastructure --startup-project src/Modules/Payments.Infrastructure --context PaymentsDbContext --connection "$ConnectionStrings__Payments"
+dotnet ef database update --project src/Modules/Ledger.Infrastructure --startup-project src/Modules/Ledger.Infrastructure --context LedgerDbContext --connection "$ConnectionStrings__Ledger"
+dotnet ef database update --project src/Modules/Reconciliation.Infrastructure --startup-project src/Modules/Reconciliation.Infrastructure --context ReconciliationDbContext --connection "$ConnectionStrings__Reconciliation"
 ```
 
 For HTTPS use the .NET development certificate. `dotnet dev-certs https --trust` may require your operating system's confirmation; it changes your local certificate trust. Alternatively configure a local certificate explicitly through Kestrel's certificate path/key settings. Start only the loopback HTTPS profile:
 
 ```sh
-dotnet run --project src/Demopay.Api --configuration Release --no-build --launch-profile https &
+dotnet run --project src/Api --configuration Release --no-build --launch-profile https &
 Demopay_api_pid=$!
 ```
 

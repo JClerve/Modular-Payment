@@ -45,7 +45,7 @@ dotnet test Demopay.slnx --configuration Release --no-build --verbosity minimal
 <br>
 
 ```sh
-dotnet test tests/Demopay.IntegrationTests --configuration Release --no-build \
+dotnet test tests/Integration/Api --configuration Release --no-build \
   --filter FullyQualifiedName~CreatedProviderPaymentCompletesOnlyFromSignedEvidenceAndPostsBalancedLedgerOnce \
   --verbosity normal
 ```
@@ -280,14 +280,16 @@ api -H 'Content-Type: application/json' \
 
 ```text
 src/
-├── Demopay.Api/                                   # Host, endpoints, auth, health, workers
-├── Demopay.Modules.Payments[.Infrastructure]/     # Payments domain + EF Core + Stripe adapter
-├── Demopay.Modules.Ledger[.Infrastructure]/       # Double-entry ledger + EF Core
-└── Demopay.Modules.Reconciliation[.Infrastructure]/
+├── Api/                                 # Host, endpoints, auth, health, workers
+└── Modules/
+    ├── Payments[.Infrastructure]/       # Payments domain + EF Core + Stripe adapter
+    ├── Ledger[.Infrastructure]/         # Double-entry ledger + EF Core
+    └── Reconciliation[.Infrastructure]/
 tests/
-├── Demopay.IntegrationTests/                      # End-to-end HTTP + workers + PostgreSQL
-├── Demopay.Modules.*.UnitTests/
-└── Demopay.Modules.*.Infrastructure.IntegrationTests/
+├── Unit/                                # Payments, Ledger, Reconciliation
+└── Integration/
+    ├── Api/                             # End-to-end HTTP + workers + PostgreSQL
+    └── *.Infrastructure/                # Per-module PostgreSQL tests
 ```
 
 </details>

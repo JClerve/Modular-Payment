@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Demopay.Modules.Ledger\Demopay.Modules.Ledger.csproj" />
+    <ProjectReference Include="../Ledger/Demopay.Modules.Ledger.csproj" />
   </ItemGroup>
 
   <ItemGroup>

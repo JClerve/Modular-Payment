@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Demopay.Modules.Reconciliation.Infrastructure\Demopay.Modules.Reconciliation.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Modules/Ledger.Infrastructure/Demopay.Modules.Ledger.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

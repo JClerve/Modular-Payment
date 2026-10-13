@@ -18,9 +18,9 @@ Apply all module migrations before starting the local flow or enabling workers. 
 
 ```sh
 dotnet tool restore --tool-manifest dotnet-tools.json
-dotnet ef database update --project src/Demopay.Modules.Payments.Infrastructure --startup-project src/Demopay.Modules.Payments.Infrastructure --context PaymentsDbContext --connection "$ConnectionStrings__Payments"
-dotnet ef database update --project src/Demopay.Modules.Ledger.Infrastructure --startup-project src/Demopay.Modules.Ledger.Infrastructure --context LedgerDbContext --connection "$ConnectionStrings__Ledger"
-dotnet ef database update --project src/Demopay.Modules.Reconciliation.Infrastructure --startup-project src/Demopay.Modules.Reconciliation.Infrastructure --context ReconciliationDbContext --connection "$ConnectionStrings__Reconciliation"
+dotnet ef database update --project src/Modules/Payments.Infrastructure --startup-project src/Modules/Payments.Infrastructure --context PaymentsDbContext --connection "$ConnectionStrings__Payments"
+dotnet ef database update --project src/Modules/Ledger.Infrastructure --startup-project src/Modules/Ledger.Infrastructure --context LedgerDbContext --connection "$ConnectionStrings__Ledger"
+dotnet ef database update --project src/Modules/Reconciliation.Infrastructure --startup-project src/Modules/Reconciliation.Infrastructure --context ReconciliationDbContext --connection "$ConnectionStrings__Reconciliation"
 ```
 
 The newest Payments migration is `20261010105446_AddPaymentProviderCreationAttempts`. Earlier inbox, posting preparation and receipt retry migrations are also required. Migrations are not applied automatically at host startup.
