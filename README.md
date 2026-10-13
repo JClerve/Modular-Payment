@@ -279,7 +279,7 @@ api -H 'Content-Type: application/json' \
 <br>
 
 ```text
-src/
+app/
 ├── Api/                                 # Host, endpoints, auth, health, workers
 └── Modules/
     ├── Payments[.Infrastructure]/       # Payments domain + EF Core + Stripe adapter

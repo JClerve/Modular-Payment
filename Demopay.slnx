@@ -1,12 +1,12 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Api/Demopay.Api.csproj" />
-    <Project Path="src/Modules/Payments.Infrastructure/Demopay.Modules.Payments.Infrastructure.csproj" />
-    <Project Path="src/Modules/Payments/Demopay.Modules.Payments.csproj" />
-    <Project Path="src/Modules/Ledger.Infrastructure/Demopay.Modules.Ledger.Infrastructure.csproj" />
-    <Project Path="src/Modules/Ledger/Demopay.Modules.Ledger.csproj" />
-    <Project Path="src/Modules/Reconciliation.Infrastructure/Demopay.Modules.Reconciliation.Infrastructure.csproj" />
-    <Project Path="src/Modules/Reconciliation/Demopay.Modules.Reconciliation.csproj" />
+  <Folder Name="/app/">
+    <Project Path="app/Api/Demopay.Api.csproj" />
+    <Project Path="app/Modules/Payments.Infrastructure/Demopay.Modules.Payments.Infrastructure.csproj" />
+    <Project Path="app/Modules/Payments/Demopay.Modules.Payments.csproj" />
+    <Project Path="app/Modules/Ledger.Infrastructure/Demopay.Modules.Ledger.Infrastructure.csproj" />
+    <Project Path="app/Modules/Ledger/Demopay.Modules.Ledger.csproj" />
+    <Project Path="app/Modules/Reconciliation.Infrastructure/Demopay.Modules.Reconciliation.Infrastructure.csproj" />
+    <Project Path="app/Modules/Reconciliation/Demopay.Modules.Reconciliation.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Integration/Api/Demopay.IntegrationTests.csproj" />

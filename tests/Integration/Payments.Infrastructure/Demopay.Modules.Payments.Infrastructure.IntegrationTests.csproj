@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Modules/Payments.Infrastructure/Demopay.Modules.Payments.Infrastructure.csproj" />
-    <ProjectReference Include="../../../src/Modules/Ledger/Demopay.Modules.Ledger.csproj" />
+    <ProjectReference Include="../../../app/Modules/Payments.Infrastructure/Demopay.Modules.Payments.Infrastructure.csproj" />
+    <ProjectReference Include="../../../app/Modules/Ledger/Demopay.Modules.Ledger.csproj" />
   </ItemGroup>
 
 </Project>

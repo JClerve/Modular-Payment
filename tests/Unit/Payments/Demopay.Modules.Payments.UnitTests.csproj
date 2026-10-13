@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Modules/Payments/Demopay.Modules.Payments.csproj" />
+    <ProjectReference Include="../../../app/Modules/Payments/Demopay.Modules.Payments.csproj" />
   </ItemGroup>
 
 </Project>

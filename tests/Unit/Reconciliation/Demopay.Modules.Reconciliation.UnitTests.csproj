@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Modules/Reconciliation/Demopay.Modules.Reconciliation.csproj" />
+    <ProjectReference Include="../../../app/Modules/Reconciliation/Demopay.Modules.Reconciliation.csproj" />
   </ItemGroup>
 
 </Project>

@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Modules/Ledger.Infrastructure/Demopay.Modules.Ledger.Infrastructure.csproj" />
+    <ProjectReference Include="../../../app/Modules/Ledger.Infrastructure/Demopay.Modules.Ledger.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

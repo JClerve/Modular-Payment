@@ -12,6 +12,6 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../../src/Modules/Ledger/Demopay.Modules.Ledger.csproj" />
+    <ProjectReference Include="../../../app/Modules/Ledger/Demopay.Modules.Ledger.csproj" />
   </ItemGroup>
 </Project>
